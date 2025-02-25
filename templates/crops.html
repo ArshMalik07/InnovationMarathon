@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Crops</title>
+</head>
+<body>
+    <h1>Available Crops</h1>
+    <ul>
+        {% for crop in crops %}
+        <li>
+            <img src="{{ url_for('static', filename='uploads/' + crop.image) }}" alt="Crop Image" style="width:200px;height:auto;">
+            <p>Price: {{ crop.price }}</p>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

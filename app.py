@@ -1,9 +1,15 @@
 import string
 import bcrypt
-from flask import Flask, redirect, render_template, url_for, request, Markup
+import sqlite3
+
+from flask import Flask, redirect, render_template, url_for, request, Markup, flash
+import logging
+
+
+
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
-from wtforms import StringField, PasswordField, SubmitField
+from wtforms import StringField, PasswordField, SubmitField, DecimalField, TextAreaField
 from wtforms.validators import InputRequired, Length, ValidationError
 from flask_wtf import FlaskForm
 from flask_bcrypt import Bcrypt
@@ -20,6 +26,10 @@ from PIL import Image
 from utils.model import ResNet9
 from utils.fertilizer import fertilizer_dic
 from utils.disease import disease_dic
+from flask_wtf.file import FileField, FileRequired
+from flask import jsonify
+
+import sqlite3
 
 # -------------------------LOADING THE TRAINED MODELS -----------------------------------------------
 
@@ -127,8 +137,149 @@ def predict_image(img, model=disease_model):
 app = Flask(__name__)
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-app.config["SECRET_KEY"] = 'thisissecretkey'
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:root@localhost/precision_agriculture"
+
+
+
+
+
+
+
+
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin, login_user, LoginManager, login_required, logout_user, current_user
+from wtforms import StringField, PasswordField, SubmitField, DecimalField, TextAreaField
+from wtforms.validators import InputRequired, Length, ValidationError
+from flask_wtf import FlaskForm
+from flask_bcrypt import Bcrypt
+from datetime import datetime
+import requests
+import numpy as np
+import pandas as pd
+import config
+import pickle
+import io
+import torch
+from torchvision import transforms
+from PIL import Image
+from utils.model import ResNet9
+from utils.fertilizer import fertilizer_dic
+from utils.disease import disease_dic
+from flask_wtf.file import FileField, FileRequired
+from flask import jsonify
+
+import sqlite3
+
+# -------------------------LOADING THE TRAINED MODELS -----------------------------------------------
+
+# Loading crop recommendation model
+crop_recommendation_model_path = 'models/RandomForest.pkl'
+crop_recommendation_model = pickle.load(
+    open(crop_recommendation_model_path, 'rb'))
+
+# Loading plant disease classification model
+
+disease_classes = ['Apple___Apple_scab',
+                   'Apple___Black_rot',
+                   'Apple___Cedar_apple_rust',
+                   'Apple___healthy',
+                   'Blueberry___healthy',
+                   'Cherry_(including_sour)___Powdery_mildew',
+                   'Cherry_(including_sour)___healthy',
+                   'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot',
+                   'Corn_(maize)___Common_rust_',
+                   'Corn_(maize)___Northern_Leaf_Blight',
+                   'Corn_(maize)___healthy',
+                   'Grape___Black_rot',
+                   'Grape___Esca_(Black_Measles)',
+                   'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)',
+                   'Grape___healthy',
+                   'Orange___Haunglongbing_(Citrus_greening)',
+                   'Peach___Bacterial_spot',
+                   'Peach___healthy',
+                   'Pepper,_bell___Bacterial_spot',
+                   'Pepper,_bell___healthy',
+                   'Potato___Early_blight',
+                   'Potato___Late_blight',
+                   'Potato___healthy',
+                   'Raspberry___healthy',
+                   'Soybean___healthy',
+                   'Squash___Powdery_mildew',
+                   'Strawberry___Leaf_scorch',
+                   'Strawberry___healthy',
+                   'Tomato___Bacterial_spot',
+                   'Tomato___Early_blight',
+                   'Tomato___Late_blight',
+                   'Tomato___Leaf_Mold',
+                   'Tomato___Septoria_leaf_spot',
+                   'Tomato___Spider_mites Two-spotted_spider_mite',
+                   'Tomato___Target_Spot',
+                   'Tomato___Tomato_Yellow_Leaf_Curl_Virus',
+                   'Tomato___Tomato_mosaic_virus',
+                   'Tomato___healthy']
+
+# disease prediction
+disease_model_path = 'models/plant_disease_model.pth'
+disease_model = ResNet9(3, len(disease_classes))
+disease_model.load_state_dict(torch.load(
+    disease_model_path, map_location=torch.device('cpu')))
+disease_model.eval()
+
+
+
+def weather_fetch(city_name):
+    """
+    Fetch and returns the temperature and humidity of a city
+    :params: city_name
+    :return: temperature, humidity
+    """
+    api_key = config.weather_api_key
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+
+    complete_url = base_url + "appid=" + api_key + "&q=" + city_name
+    response = requests.get(complete_url)
+    x = response.json()
+
+    if x["cod"] != "404":
+        y = x["main"]
+
+        temperature = round((y["temp"] - 273.15), 2)
+        humidity = y["humidity"]
+        return temperature, humidity
+    else:
+        return None
+
+def predict_image(img, model=disease_model):
+    """
+    Transforms image to tensor and predicts disease label
+    :params: image
+    :return: prediction (string)
+    """
+    transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.ToTensor(),
+    ])
+    image = Image.open(io.BytesIO(img))
+    img_t = transform(image)
+    img_u = torch.unsqueeze(img_t, 0)
+
+    # Get predictions from model
+    yb = model(img_u)
+    # Pick index with highest probability
+    _, preds = torch.max(yb, dim=1)
+    prediction = disease_classes[preds[0].item()]
+    # Retrieve the class label
+    return prediction
+
+
+
+app = Flask(__name__)
+db = SQLAlchemy(app)
+bcrypt = Bcrypt(app)
+app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:root@localhost/precision_agriculture"
+
+app.config["SECRET_KEY"] = 'arshmalek'
 
 
 
@@ -175,8 +326,41 @@ class ContactUs(db.Model):
     text = db.Column(db.String(900), nullable=False)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
+
+
+
     def __repr__(self) -> str:
         return f"{self.sno} - {self.title}"
+    
+
+class CropUpload(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    image_url = db.Column(db.String(200), nullable=False)
+    name = db.Column(db.String(200),nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(500), nullable=False)
+    person_name = db.Column(db.String(500), nullable=False)
+    email = db.Column(db.String(500), nullable=False)
+    mobile = db.Column(db.String(15), nullable=False)
+    date_uploaded = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f"CropUpload('{self.id}','{self.name}' ,'{self.price}', '{self.description}', '{self.person_name}' ,'{self.email}', '{self.mobile}''{self.date_uploaded}')"
+
+
+class CropUploadForm(FlaskForm):
+    image = FileField("Upload Crop Image", validators=[FileRequired()])
+    name = StringField("Crop Name", validators=[InputRequired(), Length(min=2, max=
+                                                                        20)], render_kw={"placeholder": "Crop Name"})
+    price = DecimalField("Price", validators=[InputRequired()])
+    description = TextAreaField("Description", validators=[InputRequired(), Length(min=1, max=500)])
+    person_name = StringField("Name of Seller",validators=[InputRequired(),Length(min=2, max=
+                                                                        20)])
+    email = StringField("Email",validators=[InputRequired(), Length(min=1, max=500)])
+
+    mobile = StringField("Mobile",validators=[InputRequired()])
+
+    submit = SubmitField("Upload")
 
 
 @app.route("/")
@@ -408,5 +592,122 @@ def reg():
     return render_template("reg.html", form=form)
 
 
+from werkzeug.utils import secure_filename
+import os
+
+# Define allowed file extensions for the image
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# Set up folder for image uploads
+UPLOAD_FOLDER = 'static/uploads'
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+@app.route('/fetch_crops')
+def fetch_crops():
+    return render_template('fetch_crops.html')
+
+@app.route('/api/crops')
+def api_crops():
+    crops = CropUpload.query.all()
+    crop_list = [{
+        'id': crop.id,
+        'name': crop.name,
+        'person_name' : crop.person_name,
+        'email' : crop.email,
+        'mobile': crop.mobile,
+        'description': crop.description,
+        'price': crop.price,
+        'image_url': crop.image_url
+    } for crop in crops]
+    return jsonify(crop_list)
+
+
+
+@app.route("/upload_crop", methods=['GET', 'POST'])
+@login_required
+def upload_crop():
+    form = CropUploadForm()
+    if form.validate_on_submit():
+        try:
+            # Check if the file is part of the request
+            if 'image' not in request.files:
+                flash('No file part in the request', 'error')
+                return redirect(request.url)
+            
+            file = request.files['image']
+            
+            if not file or file.filename == '':
+                flash('No selected file', 'error')
+                return redirect(request.url)
+                
+            if not allowed_file(file.filename):
+                flash('Invalid file type. Allowed types are: png, jpg, jpeg', 'error')
+                return redirect(request.url)
+                
+            # Check file size (max 5MB)
+            file.seek(0, os.SEEK_END)
+            file_length = file.tell()
+            file.seek(0)
+            if file_length > 5 * 1024 * 1024:  # 5MB limit
+                flash('File size exceeds 5MB limit', 'error')
+                return redirect(request.url)
+
+            filename = secure_filename(file.filename)
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            # Ensure upload folder exists
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            
+            file.save(file_path)
+            logging.info(f"File saved successfully: {file_path}")
+
+            # Store crop details in the database
+            new_crop = CropUpload(
+                image_url=file_path,
+                name=form.name.data,
+                price=form.price.data,
+                description=form.description.data,
+                person_name=form.person_name.data,
+                email=form.email.data,
+                mobile=form.mobile.data
+            )
+
+            db.session.add(new_crop)
+            db.session.commit()
+            logging.info(f"New crop added to database: {new_crop}")
+
+            flash('Crop uploaded successfully!', 'success')
+            return redirect(url_for('hello_world'))
+
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Error uploading crop: {str(e)}")
+            flash('An error occurred while uploading the crop. Please try again.', 'error')
+            return redirect(request.url)
+
+    return render_template("upload_crop.html", form=form)
+
+
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('app.log'),
+        logging.StreamHandler()
+    ]
+)
+
 if __name__ == "__main__":
-    app.run(debug=True,port=8000)
+    with app.app_context():
+        try:
+            db.create_all()
+            logging.info("Database tables created successfully")
+        except Exception as e:
+            logging.error(f"Error creating database tables: {str(e)}")
+    app.run(debug=True, port=8000)

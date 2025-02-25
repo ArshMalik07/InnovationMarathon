@@ -3,16 +3,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Amatic+SC:wght@700&display=swap");
 :root {
     --light-gray: #343a40;
-    --border: #2b303218;
+    --border: #2b3032;
     --text-color: #ff686b;
-    --roboto: "Roboto", sans-serif;
-    --gugi: "Gugi", cursive;
-    --sofia: "sofia", cursive;
-    --sans: "Source Sans Pro", sans-serif;
+    --primary-font: "Helvetica", sans-serif;
+    --secondary-font: "Helvetica", sans-serif;
+    --body-font: "Helvetica", sans-serif;
 }
 
 .primary-color {
     color: var(--primary-color);
+}
+.form-control:focus {
+    border-color: blue !important;
+    outline: none;
 }
 
 .bg-primary-color {
@@ -37,7 +40,7 @@ html {
     overflow-x: hidden;
     max-width: 100%;
     margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Helvetica, sans-serif;
 }
 
 
@@ -103,6 +106,24 @@ header .site-title {
     text-align: center;
     color: white;
 }
+select {
+    position: relative;
+    z-index: 10;
+    background-color: white; /* Ensure visibility */
+}
+
+select {
+    position: relative;
+    z-index: 9999; /* Bring it to front */
+}
+
+.backgr-image {
+    position: relative;
+}
+
+
+
+
 
 .centered {
     position: absolute;
@@ -115,7 +136,7 @@ header .site-title {
 /* image section */
 
 .hero-image1 {
-    background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url("/static/images/1.jpeg");
+    background-image: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url("/static/images/home.jpg");
     height: 100% !important;
     background-position: center;
     background-repeat: no-repeat;
@@ -131,6 +152,9 @@ header .site-title {
     transform: translate(-50%, -50%);
     color: white;
 }
+
+
+
 
 .view {
     background-color: #82ae46;

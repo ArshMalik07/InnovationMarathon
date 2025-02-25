@@ -1,0 +1,127 @@
+/* Basic Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f7fc;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 40px;
+    font-size: 2.5rem;
+}
+
+/* Flash Messages */
+.flash-messages {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f8d7da;
+    color: #721c24;
+    font-size: 0.9rem;
+}
+
+.flash {
+    margin-bottom: 10px;
+}
+
+/* Upload Form */
+.upload-form {
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.upload-form div {
+    margin-bottom: 20px;
+}
+
+.upload-form label {
+    font-weight: bold;
+    font-size: 1.1rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.upload-form input,
+.upload-form select,
+.upload-form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-top: 5px;
+}
+
+.upload-form input[type="file"] {
+    padding: 5px;
+}
+
+.upload-form input[type="submit"] {
+    background-color: #5c6bc0;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.upload-form input[type="submit"]:hover {
+    background-color: #3f51b5;
+}
+
+/* Error Messages */
+span[style="color: red;"] {
+    font-size: 0.9rem;
+    display: block;
+    margin-top: 5px;
+}
+
+.upload-form div.error {
+    border: 1px solid #f44336;
+    padding: 10px;
+    background-color: #ffebee;
+}
+
+.upload-form div.error input,
+.upload-form div.error select,
+.upload-form div.error textarea {
+    border-color: #f44336;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+
+    .upload-form {
+        padding: 20px;
+    }
+
+    .upload-form input,
+    .upload-form select,
+    .upload-form textarea {
+        font-size: 0.95rem;
+    }
+
+    .upload-form input[type="submit"] {
+        width: 100%;
+    }
+}

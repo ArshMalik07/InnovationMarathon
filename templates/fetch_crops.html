@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+    <title>Fetch Crops</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/fetch_crop.css') }}">
+
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Available Crops</h1>
+        <div id="crop-list" class="row mt-3">
+            <!-- Crop data will be populated here -->
+        </div>
+    </div>
+
+    <script>
+        // Fetch crop data from the server
+        fetch('/api/crops')
+            .then(response => response.json())
+            .then(data => {
+                const cropList = document.getElementById('crop-list');
+                data.forEach(crop => {
+                    const cropCard = document.createElement('div');
+                    cropCard.classList.add('col-md-4', 'mb-4');
+
+                    cropCard.innerHTML = `
+                        <div class="card">
+                            <img src="${crop.image_url}" class="card-img-top" alt="${crop.name}">
+                            <div class="card-body">
+                                <h5 class="card-title">Crop: ${crop.name}</h5>
+                                <h5 class="card-title">Seller: ${crop.person_name}</h5>
+                                <h5 class="card-title">Email: ${crop.email}</h5>
+                                <h5 class="card-title">Contact: ${crop.mobile}</h5>
+                                <p class="card-text"><strong>Price:</strong> $${crop.price}</p>
+                                <p class="card-text">${crop.description}</p>
+                            </div>
+                        </div>
+                    `;
+
+                    cropList.appendChild(cropCard);
+                });
+            })
+            .catch(error => console.error('Error fetching crop data:', error));
+    </script>
+</body>
+</html>
